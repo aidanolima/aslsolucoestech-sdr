@@ -1,6 +1,9 @@
 # deps
 node_modules/
 .pnpm-store/
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
 
 # env & secrets
 .env
@@ -19,16 +22,34 @@ backups/
 .chrome-profile/
 browser-state/
 
-# build
+# build & cache
 .next/
 dist/
 out/
 *.tsbuildinfo
+.turbo/
+.cache/
 
-# runtime artifacts
+# runtime artifacts & logs
 logs/
+*.log
 screenshots/
 traces/
+coverage/
 
-# os
+# media & binaries (IA não processa em texto)
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.ico
+*.svg
+*.webp
+*.pdf
+
+# os, git & ide
 .DS_Store
+Thumbs.db
+.git/
+.vscode/
+.idea/

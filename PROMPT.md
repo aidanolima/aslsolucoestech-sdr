@@ -12,19 +12,19 @@
 Estes são os únicos dados do negócio. Grave-os em `config/business.json` no início do trabalho e leia deles em todo o resto do sistema — nenhum valor real pode ficar espalhado pelo código.
 
 ```
-OWNER_NAME              = {{SEU_NOME}}
-OWNER_ROLE              = {{SEU_CARGO}}
-COMPANY_NAME            = {{NOME_DA_EMPRESA}}
-COMPANY_WEBSITE         = {{SITE_DA_EMPRESA}}
-INSTAGRAM_HANDLE        = {{@SEU_INSTAGRAM}}
+OWNER_NAME              = {{Áidano Lima}}
+OWNER_ROLE              = {{CEO}}
+COMPANY_NAME            = {{ASL Soluções Tech}}
+COMPANY_WEBSITE         = {{https://aslsolucoestech.com.br/}}
+INSTAGRAM_HANDLE        = {{@aslsolucoestech}}
 
-WHATSAPP_LINK           = {{https://wa.me/55...}}
+WHATSAPP_LINK           = {{https://wa.me/56987425612}}
 AFFILIATE_GROUP_LINK    = {{link do grupo de afiliados}}
 
-ONE_LINE_PITCH          = {{o que a empresa resolve, em uma frase}}
+ONE_LINE_PITCH          = {{Soluções Tecnologicas}}
 HOW_IT_WORKS            = {{passo 1}} | {{passo 2}} | {{passo 3}}
-REVENUE_MODEL           = {{como a empresa ganha dinheiro}}
-MARKET_JARGON           = {{termo do nicho}} = {{o que significa}}
+REVENUE_MODEL           = {{Desenvolvimento de soluções tecnologicas}}
+MARKET_JARGON           = {{Desenvolvimento de sistemas}} = {{Desenvolvimento de sistemas e soluções tecnologica}}
 
 VERIFIED_CLAIMS         = {{afirmações JÁ comprovadas — só estas podem ser enviadas}}
 UNVERIFIED_CLAIMS       = {{afirmações a comprovar — BLOQUEADAS até virarem prova}}

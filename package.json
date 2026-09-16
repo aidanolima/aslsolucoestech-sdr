@@ -1,0 +1,44 @@
+{
+  "name": "buscandomilhao",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Sistema comercial autônomo para o Instagram da ASL Soluções Tech",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "better-sqlite3": "^11.2.1",
+    "cors": "^2.8.6",
+    "csv-parser": "^3.2.1",
+    "dotenv": "^17.4.2",
+    "drizzle-orm": "^0.33.0",
+    "express": "^5.2.1",
+    "next": "15.0.0",
+    "node-cron": "^4.6.0",
+    "playwright": "^1.47.0",
+    "react": "19.0.0",
+    "react-dom": "19.0.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.11",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^20.0.0",
+    "@types/node-cron": "^3.0.11",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "autoprefixer": "^10.0.0",
+    "drizzle-kit": "^0.24.0",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "15.0.0",
+    "postcss": "^8.0.0",
+    "tailwindcss": "^3.4.0",
+    "typescript": "^5.0.0"
+  }
+}
