@@ -17,7 +17,7 @@
 ![Tailwind](https://img.shields.io/badge/Tailwind-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
 ![SQLite](https://img.shields.io/badge/SQLite-003B57?style=flat-square&logo=sqlite&logoColor=white)
 ![Drizzle](https://img.shields.io/badge/Drizzle-C5F74F?style=flat-square&logo=drizzle&logoColor=black)
-![OpenAI](https://img.shields.io/badge/OpenAI-412991?style=flat-square&logo=openai&logoColor=white)
+![Gemini](https://img.shields.io/badge/Google%20Gemini-8E75B2?style=flat-square&logo=googlegemini&logoColor=white)
 ![Playwright](https://img.shields.io/badge/Playwright-2EAD33?style=flat-square&logo=playwright&logoColor=white)
 
 <br/>
@@ -36,7 +36,7 @@
 
 ## 🎯 O que é
 
-Um agente de IA que prospecta pelo Instagram sozinho: acha o lead, qualifica, escreve a primeira mensagem, entende a resposta, conduz a conversa, encaminha pro WhatsApp e **aprende com o que converteu** — ajustando público, texto, horário e cadência sem ninguém mandar.
+Um agente de IA que prospecta pelo Instagram: acha o lead, qualifica com Google Gemini, escreve a primeira mensagem, envia pelo navegador Chrome, monitora respostas, agenda follow-ups e encaminha o lead para o WhatsApp.
 
 Roda 100% local. Seu banco, sua sessão, sua chave.
 
@@ -57,8 +57,8 @@ flowchart LR
     C --> D{"Respondeu?"}
     D -- não --> E["⏰ Follow-up<br/>agendado"]
     E --> D
-    D -- sim --> F["📡 Webhook Meta<br/>handoff de canal"]
-    F --> G["🤖 Conversa<br/>API oficial + OpenAI"]
+    D -- sim --> F["🔎 Monitoramento<br/>da inbox no Chrome"]
+    F --> G["🤖 Qualificação e resposta<br/>Google Gemini"]
     G --> H["📱 WhatsApp<br/>ou grupo de afiliados"]
     H --> I["📊 Métricas<br/>o que converteu?"]
     I -.retroalimenta.-> A
@@ -70,14 +70,16 @@ flowchart LR
     style I fill:#1f2937,stroke:#00C853,color:#fff
 ```
 
-### Por que dois canais
+### Canal atual e evolução planejada
 
 | Etapa | Canal | Motivo |
 |:--|:--|:--|
-| **Primeiro contato** | Seu Chrome, sua sessão | A API oficial da Meta **não abre** conversa com quem nunca te respondeu |
-| **Depois da resposta** | API oficial + webhook | É o caminho suportado, auditável e estável |
+| **Hoje** | Seu Chrome, sua sessão | O projeto usa Playwright conectado ao Chrome via CDP para descobrir perfis, enviar DMs e ler a inbox |
+| **Futuro** | API oficial da Meta + webhook | Planejado para tornar o handoff e as conversas pós-resposta mais estáveis e auditáveis |
 
-Uma **trava de canal** garante que os dois nunca escrevam no mesmo fio. Depois do handoff, o navegador está proibido de responder.
+A integração oficial da Meta ainda não está implementada. Quando ela for adicionada, uma **trava de canal** deverá impedir que o navegador e a API escrevam no mesmo fio.
+
+> **Estado atual:** não há integração efetiva com OpenAI nem webhook da Meta no código desta versão. Ambos fazem parte do roadmap.
 
 <br/>
 
@@ -111,24 +113,22 @@ pnpm install && pnpm dev
 ## 🔧 Setup da sua máquina
 
 <details>
-<summary><b>🔑 Chave da OpenAI</b></summary>
+<summary><b>🔑 Chave do Google Gemini</b></summary>
 
 <br/>
 
-1. **https://platform.openai.com/api-keys** → login.
-2. **Settings → Billing**: adiciona crédito. Sem crédito, dá `429 insufficient_quota`.
-3. **Settings → Limits**: define um **hard limit** mensal (ex. `USD 50`). Esse é o freio real se o agente entrar em loop.
-4. **Create new secret key** → projeto **separado** (não usa o `Default`) → permissão `Restricted`, só `Model capabilities: Write`.
-5. Copia a chave **agora**, ela só aparece uma vez.
+1. Crie uma chave no Google AI Studio/Google Cloud para usar a API do Gemini.
+2. Configure limites de uso e cobrança na conta Google para evitar custos inesperados.
+3. Copie a chave e guarde-a em local seguro; ela pode não ser exibida novamente.
 
 ```bash
 cp .env.example .env
-# cola em OPENAI_API_KEY=sk-proj-...
+# cola em GEMINI_API_KEY=sua_chave...
 ```
 
 O `.env` já está no `.gitignore`. Nunca commita, nunca aparece em print ou vídeo.
 
-**Vazou?** Revoga em `platform.openai.com/api-keys` e gera outra. Revogar resolve — reescrever o histórico do Git é secundário.
+**Vazou?** Revogue a chave no Google AI Studio/Google Cloud e gere outra. Nunca commite o `.env` nem publique chaves em prints ou vídeos.
 
 </details>
 
@@ -219,7 +219,7 @@ Pedido de parar é atendido na hora. O perfil entra em `do_not_contact` — perm
 
 <br/>
 
-Toda chamada à OpenAI grava tokens e custo. Ao bater `OPENAI_MONTHLY_BUDGET_USD`, o sistema pausa sozinho.
+O código atual usa Google Gemini para a análise de perfis e geração de mensagens. O controle detalhado de tokens e orçamento ainda deve ser amadurecido.
 
 O painel mostra **custo por lead** e **custo por cliente ativo** — sem isso não dá pra saber se a automação dá lucro.
 
