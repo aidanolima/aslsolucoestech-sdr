@@ -8,7 +8,7 @@ import { leads, messages } from '../db/schema.ts';
  * Utiliza o Chrome real conectado via Chrome DevTools Protocol (CDP).
  */
 export async function sendPendingDirects() {
-  console.log('📬 [DIRECT SENDER] Buscando leads com envio de direct pendente...');
+  console.log('📬 [DIRECT SENDER] Buscando leads "Qualificados" com envio de direct pendente...');
 
   // 1. Buscar no banco SQLite os leads com channelState = 'browser_contact_pending' juntamente com seus icebreakers
   const pendingLeadsData = await db
@@ -21,12 +21,14 @@ export async function sendPendingDirects() {
     .where(
       and(
         eq(leads.channelState, 'browser_contact_pending'),
-        eq(messages.direction, 'outbound')
+        eq(messages.direction, 'outbound'),
+        // ✨ A GRANDE TRAVA DE SEGURANÇA: Só puxa se a IA disse expressamente que é QUALIFICADO
+        eq(leads.pipelineState, 'qualified')
       )
     );
 
   if (pendingLeadsData.length === 0) {
-    console.log('✅ [DIRECT SENDER] Nenhum direct pendente para enviar.');
+    console.log('✅ [DIRECT SENDER] Nenhum lead QUALIFICADO pendente de envio no momento.');
     return;
   }
 
@@ -178,53 +180,47 @@ export async function sendPendingDirects() {
 
         // 6. Aguarde o campo de texto da DM carregar
         console.log('[DIRECT SENDER] Aguardando o campo de texto carregar...');
-        const dmSelectors = [
-          'div[contenteditable="true"]',
-          'div[aria-label*="Mensagem"]',
-          'div[aria-label*="Message"]',
-          'p[data-placeholder*="Mensagem"]',
-          'p[data-placeholder*="Message"]',
-          'textarea[placeholder*="Mensagem"]',
-          'textarea[placeholder*="Message"]'
-        ];
-
         let messageInput = null;
-        for (const selector of dmSelectors) {
-          try {
-            const input = page.locator(selector).first();
-            if (await input.isVisible()) {
-              messageInput = input;
-              console.log(`[DIRECT SENDER] Campo de texto localizado via seletor: "${selector}"`);
-              break;
-            }
-          } catch {
-            // Tenta o próximo seletor
+
+        try {
+          const primarySelector = 'div[contenteditable="true"][role="textbox"]';
+          await page.waitForSelector(primarySelector, { timeout: 15000, state: 'attached' });
+          messageInput = page.locator(primarySelector).first();
+          console.log(`[DIRECT SENDER] Campo de texto localizado via seletor principal.`);
+        } catch (e) {
+          console.log('[DIRECT SENDER] Seletor principal falhou. Tentando fallbacks...');
+          const fallbackSelectors = [
+            'div[contenteditable="true"]',
+            'textarea[placeholder*="Message"]',
+            'textarea[placeholder*="Mensagem"]'
+          ];
+          
+          for (const selector of fallbackSelectors) {
+            try {
+              const input = page.locator(selector).first();
+              if (await input.count() > 0) {
+                messageInput = input;
+                console.log(`[DIRECT SENDER] Campo de texto localizado via fallback: "${selector}"`);
+                break;
+              }
+            } catch {}
           }
         }
 
         if (!messageInput) {
-          // Se não encontrou ativo, tenta aguardar o seletor genérico contenteditable
-          try {
-            await page.waitForSelector('div[contenteditable="true"]', { timeout: 15000 });
-            messageInput = page.locator('div[contenteditable="true"]').first();
-            console.log('[DIRECT SENDER] Campo de texto localizado via fallback contenteditable.');
-          } catch {
-            console.error(`❌ [DIRECT SENDER] Não foi possível carregar o campo de texto da DM para @${cleanUsername}`);
-            continue;
-          }
+          console.error(`❌ [DIRECT SENDER] Não foi possível encontrar a caixa de texto da DM para @${cleanUsername}`);
+          continue;
         }
 
-        // Foca no input
-        await messageInput.click();
-        await page.waitForTimeout(800);
+        console.log('[DIRECT SENDER] Clicando na caixa de texto...');
+        await messageInput.click({ force: true });
+        await page.waitForTimeout(1000);
 
         // 7. Digite a mensagem de forma humanizada (delay aleatório por caractere)
         console.log(`[DIRECT SENDER] Digitando mensagem de forma humanizada...`);
-        // Escolhe um delay médio de caractere humanizado (50ms a 120ms)
         const charDelay = Math.floor(Math.random() * (120 - 50 + 1)) + 50;
         await messageInput.pressSequentially(messageContent, { delay: charDelay });
         
-        // Pausa de suspense realista após terminar a digitação antes do envio
         const preSendDelay = Math.floor(Math.random() * (2000 - 1000 + 1)) + 1000;
         await page.waitForTimeout(preSendDelay);
 
@@ -232,11 +228,10 @@ export async function sendPendingDirects() {
         console.log('[DIRECT SENDER] Pressionando Enter para enviar direct...');
         await messageInput.press('Enter');
 
-        // Aguarda 4 segundos de processamento após o envio físico
         await page.waitForTimeout(4000);
         console.log(`✨ [DIRECT SENDER] Mensagem enviada com sucesso para @${cleanUsername}!`);
 
-        // 9. Atualizar o status do lead para 'contacted' no SQLite
+        // 9. Atualizar o status do lead para 'contacted'
         console.log('[DIRECT SENDER] Atualizando o status do lead no SQLite...');
         await db.update(leads)
           .set({
@@ -248,7 +243,7 @@ export async function sendPendingDirects() {
 
         console.log(`💾 [DIRECT SENDER] Banco de dados atualizado: Lead ID ${lead.id} marcado como contacted.`);
 
-        // 10. Adicionar intervalo aleatório de segurança (antiban) de 30 a 60 segundos antes do próximo lead
+        // 10. Adicionar intervalo aleatório de segurança (antiban) de 30 a 60 segundos
         if (i < uniquePendingLeads.length - 1) {
           const antibanDelay = Math.floor(Math.random() * (60000 - 30000 + 1)) + 30000;
           console.log(`🛡️ [ANTIBAN] Aguardando intervalo de segurança de ${antibanDelay / 1000}s antes de prospecção do próximo perfil...`);
@@ -258,7 +253,6 @@ export async function sendPendingDirects() {
       } catch (leadError) {
         console.error(`❌ [DIRECT SENDER ERROR] Falha ao processar direct para o lead @${cleanUsername}:`, leadError);
       } finally {
-        // Garante que a aba do lead atual será fechada para não vazar recursos
         if (page) {
           await page.close().catch(() => {});
         }
@@ -268,7 +262,6 @@ export async function sendPendingDirects() {
   } catch (error) {
     console.error('❌ [DIRECT SENDER ERROR] Erro crítico no fluxo do Direct Sender:', error);
   } finally {
-    // Não fecha o navegador CDP para preservar a sessão do usuário no Chrome principal
     console.log('[DIRECT SENDER] Processo de envio de directs finalizado.');
   }
 }

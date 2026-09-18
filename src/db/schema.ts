@@ -31,3 +31,12 @@ export const metrics = sqliteTable('metrics', {
   converted: integer('converted', { mode: 'boolean' }).default(false),
   timestamp: integer('timestamp').default(Date.now()),
 });
+
+export const campaignSettings = sqliteTable('campaign_settings', {
+  id: integer('id').primaryKey().default(1),
+  businessName: text('business_name'),
+  productOffer: text('product_offer'),
+  targetAudience: text('target_audience'),
+  aiCriteria: text('ai_criteria'),
+  aiMessage: text('ai_message'),
+});
