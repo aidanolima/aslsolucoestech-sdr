@@ -16,7 +16,18 @@ export async function checkInboxResponses() {
     const page = context.pages()[0] || await context.newPage();
 
     console.log("🧭 Navegando para o Instagram Inbox...");
-    await page.goto('https://www.instagram.com/direct/inbox/', { waitUntil: 'domcontentloaded' });
+    
+    // ✨ BLINDAGEM DO ACESSO AO INBOX
+    try {
+      await page.goto('https://www.instagram.com/direct/inbox/', { waitUntil: 'domcontentloaded', timeout: 30000 });
+    } catch (navError: any) {
+      if (navError.message.includes('ERR_BLOCKED_BY_RESPONSE')) {
+        console.log("⚠️ [INBOX MONITOR] O Instagram bloqueou temporariamente o acesso direto à URL do Inbox.");
+        console.log("⏭️ Pulando a etapa de leitura de respostas nesta rodada. A cadência seguirá normalmente!");
+        return; // Sai graciosamente sem quebrar o sistema
+      }
+      throw navError; // Se for outro erro crítico, repassa para o catch principal
+    }
     
     // Pausa humana
     const waitTime = Math.floor(Math.random() * 2000) + 3000;
@@ -96,8 +107,6 @@ export async function checkInboxResponses() {
            await db.update(leads).set({ pipelineState: 'replied' }).where(eq(leads.id, lead.id));
            console.log(`💾 Banco atualizado: @${username} marcado como 'replied'.`);
            
-           // Repassa para a etapa final
-           //await performHandoff(lead.id);
            // Repassa para a etapa final e pega o link gerado
            const linkToSend = await performHandoff(lead.id);
            
@@ -116,7 +125,6 @@ export async function checkInboxResponses() {
              console.log(`✅ [INBOX] Mensagem e link enviados com sucesso no direct!`);
              await page.waitForTimeout(2000); // Pausa para garantir o envio antes de fechar
            }
-           /////// novo bloco encerra aqui
         } else {
            console.log(`⚠️ O perfil @${username} respondeu, mas não foi encontrado no banco de dados.`);
         }

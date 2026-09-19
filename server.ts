@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { spawn } from 'child_process';
 import { db } from './src/db/index.ts';
-import { leads, campaignSettings } from './src/db/schema.ts';
+import { leads, campaignSettings, messages } from './src/db/schema.ts'; // ✨ IMPORT CORRIGIDO AQUI
 import { eq, sql } from 'drizzle-orm';
 import { scrapeFollowers } from './src/services/leadScraper.ts';
 
@@ -146,7 +146,7 @@ app.get('/api/leads', async (req, res) => {
   }
 });
 
-// Rota para deletar todos os leads (Zerar base)
+// ✨ Rota para deletar TODOS os leads (Limpar Base)
 app.delete('/api/leads', async (req, res) => {
   try {
     await db.run(sql`PRAGMA foreign_keys = OFF;`);
@@ -156,6 +156,28 @@ app.delete('/api/leads', async (req, res) => {
   } catch (error) {
     console.error('❌ [SERVER] Erro ao limpar leads:', error);
     res.status(500).json({ success: false, error: 'Erro ao limpar base de leads' });
+  }
+});
+
+// ✨ Rota para deletar um lead específico pelo ID (Lixeira individual)
+app.delete('/api/leads/:id', async (req, res) => {
+  try {
+    const leadId = parseInt(req.params.id);
+    
+    if (isNaN(leadId)) {
+      return res.status(400).json({ success: false, error: 'ID inválido' });
+    }
+
+    // 1. Apaga as mensagens atreladas ao lead primeiro (garante que não dê erro de chave estrangeira)
+    await db.delete(messages).where(eq(messages.leadId, leadId));
+    
+    // 2. Apaga o lead principal
+    await db.delete(leads).where(eq(leads.id, leadId));
+    
+    res.json({ success: true, message: `Lead ${leadId} excluído com sucesso` });
+  } catch (error) {
+    console.error(`❌ [SERVER] Erro ao excluir o lead ${req.params.id}:`, error);
+    res.status(500).json({ success: false, error: 'Erro ao excluir o lead específico' });
   }
 });
 

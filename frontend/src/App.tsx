@@ -177,6 +177,30 @@ export default function App() {
     });
   };
 
+  const handleDeleteSingleLead = (id: number, username: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Impede que o clique na lixeira abra o drawer lateral do lead
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Excluir Lead',
+      message: `Tem certeza que deseja excluir permanentemente o lead @${username}? Ele será removido do Painel e do Pipeline.`,
+      onAction: async () => {
+        try {
+          const response = await fetch(`http://localhost:3001/api/leads/${id}`, { method: 'DELETE' });
+          if (response.ok) {
+            setLeads(prevLeads => prevLeads.filter(l => l.id !== id));
+            showToast(`Lead @${username} excluído com sucesso.`, 'success');
+          } else {
+            showToast('Erro ao excluir o lead.', 'error');
+          }
+        } catch (error) {
+          console.error('Erro ao excluir lead:', error);
+          showToast('Erro na conexão.', 'error');
+        }
+        setConfirmDialog(null);
+      }
+    });
+  };
+
   const chromeCommand = `& "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe" --remote-debugging-port=9222 --user-data-dir="C:\\chrome-dev-session"`;
 
   const fetchLeads = async () => {
@@ -322,19 +346,19 @@ export default function App() {
               onClick={() => setCurrentView('dashboard')}
               className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${currentView === 'dashboard' ? 'bg-slate-800 text-indigo-300 shadow-sm' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'}`}
             >
-              📊 CRM
+              📊 PAINEL
             </button>
             <button
               onClick={() => setCurrentView('kanban')}
               className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${currentView === 'kanban' ? 'bg-slate-800 text-indigo-300 shadow-sm' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'}`}
             >
-              📋 Pipeline
+              📋 CRM
             </button>
           </nav>
         </div>
 
         <div className="flex items-center gap-3">
-          <button onClick={() => setIsConfigModalOpen(true)} className="text-slate-400 hover:text-slate-200 bg-slate-800/50 hover:bg-slate-700 p-2 rounded-lg transition-all" title="Crir Campanha">
+          <button onClick={() => setIsConfigModalOpen(true)} className="text-slate-400 hover:text-slate-200 bg-slate-800/50 hover:bg-slate-700 p-2 rounded-lg transition-all" title="Criar Campanha">
             ⚙️
           </button>
           <button onClick={handleRunCadence} disabled={loading} className="bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 text-white font-medium px-4 py-2 rounded-lg shadow-lg shadow-indigo-600/20 transition-all cursor-pointer flex items-center gap-2 text-sm">
@@ -391,7 +415,7 @@ export default function App() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div className="bg-slate-900 border border-slate-800 rounded-lg shadow-md flex flex-col h-112.5">
                 <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
-                  <h2 className="text-sm font-semibold text-slate-200">Mesa de CRM</h2>
+                  <h2 className="text-sm font-semibold text-slate-200">Painel de Leads</h2>
                   
                   {/* BOTÕES DA MESA SUBSTITUÍDOS POR ÍCONES COM TOOLTIP (Hover) */}
                   <div className="flex gap-1.5">
@@ -409,7 +433,7 @@ export default function App() {
                     </button>
                     <button onClick={fetchLeads} className="relative group bg-slate-800/40 hover:bg-slate-700 border border-slate-700/50 p-1.5 rounded transition-all flex items-center justify-center">
                       <span className="text-sm">🔄</span>
-                      <span className="absolute top-full right-0 mt-2 w-max px-2 py-1 bg-slate-800 text-[10px] text-slate-200 rounded opacity-0 group-hover:opacity-100 transition-opacity z-50 pointer-events-none shadow-lg">Atualizar CRM</span>
+                      <span className="absolute top-full right-0 mt-2 w-max px-2 py-1 bg-slate-800 text-[10px] text-slate-200 rounded opacity-0 group-hover:opacity-100 transition-opacity z-50 pointer-events-none shadow-lg">Atualizar Painel</span>
                     </button>
                   </div>
                 </div>
@@ -421,17 +445,27 @@ export default function App() {
                         <th className="px-4 py-3">Perfil</th>
                         <th className="px-4 py-3">Nicho / Score</th>
                         <th className="px-4 py-3 text-right">Status</th>
+                        <th className="px-4 py-3 text-center w-12">Ações</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800/50">
                       {leadsLoading ? (
-                        <tr><td colSpan={3} className="px-4 py-4 text-center">Carregando...</td></tr>
+                        <tr><td colSpan={4} className="px-4 py-4 text-center">Carregando...</td></tr>
                       ) : leads.map(lead => (
                       <tr key={lead.id} className="hover:bg-slate-800/40 cursor-pointer transition-colors" onClick={() => setSelectedLead(lead)}>
                         <td className="px-4 py-3 font-medium text-slate-200">@{lead.username.replace(/^@+/, '').trim()}</td>
                         <td className="px-4 py-3 text-slate-400">{lead.niche || 'N/A'} <span className="text-slate-500">({lead.score})</span></td>
                           <td className="px-4 py-3 text-right">
                             {getStatusBadge(lead.pipelineState)}
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <button 
+                              onClick={(e) => handleDeleteSingleLead(lead.id, lead.username, e)}
+                              className="text-slate-500 hover:text-red-400 hover:bg-slate-800 p-1.5 rounded transition-all"
+                              title="Excluir Lead"
+                            >
+                              🗑️
+                            </button>
                           </td>
                         </tr>
                       ))}
@@ -464,7 +498,7 @@ export default function App() {
         {currentView === 'kanban' && (
           <div className="h-[calc(100vh-140px)] flex flex-col">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-slate-100">Pipeline de Vendas</h2>
+              <h2 className="text-xl font-bold text-slate-100">CRM de Vendas</h2>
               <p className="text-xs text-slate-400">Arraste os cards para atualizar o status.</p>
             </div>
             

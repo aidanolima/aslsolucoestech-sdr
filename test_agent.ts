@@ -5,7 +5,7 @@ async function runTest() {
   console.log("🤖 Iniciando Teste de Contexto da IA (SDR Elite - Software House)...");
   
   // Perfil REAL do seu ICP (Advogado)
-  const handleICP = '@davihenriquereino.adv'; 
+  const handleICP = '@deboramonteiroadv'; 
   
   // Perfil famoso para forçar a IA a rejeitar
   const handleRuim = '@neymarjr'; 
